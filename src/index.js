@@ -1,12 +1,5 @@
 import * as idb from 'idb';
 
-let isExisting = (await window.indexedDB.databases()).map(db => db.name).includes('test');
-if (isExisting) {
-    await idb.deleteDB('test');
-    isExisting = false;
-    console.log('remove test db');
-}
-
 const dbPromise = idb.openDB('test', 1, {
     upgrade(database, oldVersion, newVersion, transaction, event) {
         console.log('create the test db');
@@ -21,42 +14,51 @@ const dbPromise = idb.openDB('test', 1, {
         if (!database.objectStoreNames.contains('logs')) {
             const logsOS = database.createObjectStore('logs', { keyPath: 'id', autoIncrement: true });
         }
+        if (!database.objectStoreNames.contains('store')) {
+            const storeOS = database.createObjectStore('store', { keyPath: 'name', autoIncrement: true });
+            storeOS.createIndex('price', 'price', { unique: false });
+            storeOS.createIndex('description', 'description',{ unique: false });
+            storeOS.createIndex('created', 'created',{ unique: false });
+        }
     }
 });
 
-dbPromise.then(db => {
-    const tx = db.transaction('people', 'readwrite');
-    const store = tx.objectStore('people');
-    const item = {
-        name: 'HunterKo',
-        email: 'zoopk03@gmail.com'
-    };
-    const item2 = {
-        name: 'HunterKo',
-        email: 'zoopk02@gmail.com'
-    };
-    store.add(item);
-    store.add(item2)
-    return tx.done;
-}).then(function () {
-    console.log('Added item to the store!');
-});
-
-dbPromise.then((db) => {
-    const tx = db.transaction(['people', 'notes'], 'readonly');
-    const store = tx.objectStore('people');
-    return store.get('zoopk03@gmail.com');
-}).then((val) => {
-    console.dir(val);
-})
-
-dbPromise
-    .then(function (db) {
-        const tx = db.transaction('people', 'readwrite');
-        const store = tx.objectStore('people');
+await dbPromise
+    .then( (db) => {
+        const tx = db.transaction('store', 'readwrite');
+        const store = tx.objectStore('store');
         const item = {
-            name: 'HunterKo',
-            email: 'zoopk03@gmail.com'
+            name: 'sandwich',
+            price: 4.99,
+            description: 'A very tasty sandwich',
+            created: new Date().getTime(),
+        };
+        store.put(item);
+        return tx.done;
+    })
+
+
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readonly');
+        const store = tx.objectStore('store');
+        return store.get('sandwich');
+    })
+    .then(function (val) {
+        console.dir(val);
+    });
+
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readwrite');
+        const store = tx.objectStore('store');
+        const item = {
+            name: 'sandwich',
+            price: 99.99,
+            description: 'A very tasty, but quite expensive, sandwich',
+            created: new Date().getTime(),
         };
         store.put(item);
         return tx.done;
@@ -65,27 +67,95 @@ dbPromise
         console.log('Item updated!');
     });
 
-dbPromise.then((db) => {
-    const tx = db.transaction(['people', 'notes'], 'readonly');
-    const store = tx.objectStore('people');
-    return store.get('zoopk03@gmail.com');
-}).then((val) => {
-    console.dir(val);
-})
 
-dbPromise.then((db) => {
-    const tx = db.transaction(['people', 'notes'], 'readonly');
-    const store = tx.objectStore('people');
-    const index = store.index('name');
-    return store.getAll();
-}).then((val) => {
-    console.dir(val);
-})
-
-dbPromise
+await dbPromise
     .then(function (db) {
-        const tx = db.transaction('people', 'readonly');
-        const store = tx.objectStore('people');
+        const tx = db.transaction('store', 'readonly');
+        const store = tx.objectStore('store');
+        return store.get('sandwich');
+    })
+    .then(function (val) {
+        console.dir(val);
+    });
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readwrite');
+        const store = tx.objectStore('store');
+        store.delete('sandwich');
+        return tx.done;
+    })
+    .then(function () {
+        console.log('Item deleted.');
+    });
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readonly');
+        const store = tx.objectStore('store');
+        return store.get('sandwich');
+    })
+    .then(function (val) {
+        console.dir(val);
+    });
+
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readwrite');
+        const store = tx.objectStore('store');
+        const item1 = {
+            name: 'sandwich',
+            price: 99.99,
+            description: 'A very tasty, but quite expensive, sandwich',
+            created: new Date().getTime(),
+        }
+        const item2 = {
+            name: 'hotdog',
+            price: 49.99,
+            description: 'A very tasty, but quite expensive, hotdog',
+            created: new Date().getTime(),
+        }
+        const item3 = {
+            name: 'chicken',
+            price: 99.99,
+            description: 'A very tasty, but quite expensive, chicken',
+            created: new Date().getTime(),
+        }
+        const item4 = {
+            name: 'roaster',
+            price: 69.99,
+            description: 'A very tasty, but quite expensive, rpaster',
+            created: new Date().getTime(),
+        }
+        store.put(item1);
+        store.put(item2);
+        store.put(item3);
+        store.put(item4);
+        return tx.done;
+    })
+    .then(function () {
+        console.log('Item updated!');
+    });
+
+
+
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readonly');
+        const store = tx.objectStore('store');
+        return store.getAll();
+    })
+    .then(function (items) {
+        console.log('Items by name:', items);
+    });
+
+
+await dbPromise
+    .then(function (db) {
+        const tx = db.transaction('store', 'readonly');
+        const store = tx.objectStore('store');
         return store.openCursor();
     })
     .then(function logItems(cursor) {
@@ -101,3 +171,45 @@ dbPromise
     .then(function () {
         console.log('Done cursoring.');
     });
+
+
+
+
+await searchItems(1, 60);
+
+function searchItems(lower, upper) {
+    if (lower === '' && upper === '') {
+        return;
+    }
+
+    let range;
+    if (lower !== '' && upper !== '') {
+        range = IDBKeyRange.bound(lower, upper);
+    } else if (lower === '') {
+        range = IDBKeyRange.upperBound(upper);
+    } else {
+        range = IDBKeyRange.lowerBound(lower);
+    }
+
+    dbPromise
+        .then(function (db) {
+            const tx = db.transaction(['store'], 'readonly');
+            const store = tx.objectStore('store');
+            const index = store.index('price');
+            return index.openCursor(range);
+        })
+        .then(function showRange(cursor) {
+            if (!cursor) {
+                return;
+            }
+            console.log('======================================================= cursor with bound =============================================')
+            console.log('Cursored at:', cursor.key);
+            for (const field in cursor.value) {
+                console.log(cursor.value[field]);
+            }
+            return cursor.continue().then(showRange);
+        })
+        .then(function () {
+            console.log('Done cursoring.');
+        });
+}
