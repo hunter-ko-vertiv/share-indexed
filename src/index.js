@@ -213,3 +213,26 @@ function searchItems(lower, upper) {
             console.log('Done cursoring.');
         });
 }
+
+const dbPromise2 = idb.openDB('test-db7', 3, {
+    upgrade(database, oldVersion, newVersion, transaction, event) {
+        console.log(oldVersion)
+        switch (oldVersion) {
+            case 0:
+                database.createObjectStore('store', { keyPath: 'name' });
+                console.log('version 0');
+            case 1:
+                const storeOS1 = transaction.objectStore('store');
+                storeOS1.createIndex('price', 'price');
+                console.log('version 1');
+            case 2:
+                const storeOS2 = transaction.objectStore('store');
+                storeOS2.createIndex('description', 'description');
+                console.log('version 2');
+            default:
+                console.log('default');
+        }
+    }
+});
+
+await dbPromise2.then()
